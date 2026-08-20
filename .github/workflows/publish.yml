@@ -7,7 +7,7 @@ on:
 jobs:
     publish:
         name: Build and publish sb90-devops
-        runs-on: self-hosted
+        runs-on: ubuntu-latest
         timeout-minutes: 20
 
         steps:

@@ -6,14 +6,20 @@ on:
     pull_request:
 
 jobs:
-    # One job with sequential steps, not lint/test/build split: the self-hosted
-    # pool is an autoscaled dind fleet on one 8-vCPU box, so splitting does not
-    # queue work behind itself — it just multiplies checkouts and installs on a
-    # box that is already the bottleneck. See the org CLAUDE.md "Runners" notes.
+    # GitHub-hosted on purpose, against the org CLAUDE.md default: this job is
+    # ~45s and only fires on PRs to a tiny package, and the self-hosted pool is
+    # Linux-only. Every helper in proc.py branches on sys.platform and the
+    # win32 branches are the ones that actually break, so a real Windows leg is
+    # worth more here than the saved minutes. Long-running jobs still belong on
+    # self-hosted.
     test:
-        name: Lint and test
-        runs-on: self-hosted
+        name: Lint and test (${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
         timeout-minutes: 15
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
 
         steps:
             - name: Checkout repository
@@ -36,9 +42,9 @@ jobs:
             - name: Mypy
               run: mypy sb90_devops
 
-            # The runner pool is Linux-only, so the win32 branches in proc.py
-            # can never execute here. tests/test_proc_windows.py drives them
-            # with a patched sys.platform instead — that is the only coverage
-            # those branches get, so it is not optional.
+            # test_proc_windows.py drives the win32 branches with a patched
+            # sys.platform. Redundant with the windows-latest leg by design —
+            # it keeps those branches covered if the matrix ever collapses to
+            # self-hosted Linux.
             - name: Pytest
               run: pytest -q
