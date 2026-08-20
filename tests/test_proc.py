@@ -6,6 +6,7 @@ Author: Michael K. Steinberg
 """
 
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -88,3 +89,13 @@ def test_spawn_background_writes_pid_and_log(tmp_path: Path) -> None:
 
 def test_kill_pid_unknown_pid_does_not_raise() -> None:
     proc.kill_pid(999_999_999)
+
+
+def test_run_does_not_raise_by_default(tmp_path: Path) -> None:
+    result = proc.run([sys.executable, "-c", "raise SystemExit(3)"], cwd=tmp_path)
+    assert result.returncode == 3
+
+
+def test_run_check_true_raises(tmp_path: Path) -> None:
+    with pytest.raises(subprocess.CalledProcessError):
+        proc.run([sys.executable, "-c", "raise SystemExit(3)"], cwd=tmp_path, check=True)

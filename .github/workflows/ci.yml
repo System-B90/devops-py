@@ -6,17 +6,14 @@ on:
     pull_request:
 
 jobs:
+    # One job with sequential steps, not lint/test/build split: the self-hosted
+    # pool is an autoscaled dind fleet on one 8-vCPU box, so splitting does not
+    # queue work behind itself — it just multiplies checkouts and installs on a
+    # box that is already the bottleneck. See the org CLAUDE.md "Runners" notes.
     test:
-        name: Lint and test (${{ matrix.os }})
-        runs-on: ${{ matrix.os }}
+        name: Lint and test
+        runs-on: self-hosted
         timeout-minutes: 15
-        strategy:
-            fail-fast: false
-            matrix:
-                # Both, deliberately: every helper here branches on
-                # sys.platform, and the Windows branches are the ones that
-                # actually break.
-                os: [ubuntu-latest, windows-latest]
 
         steps:
             - name: Checkout repository
@@ -33,8 +30,15 @@ jobs:
             - name: Ruff
               run: ruff check .
 
+            - name: Ruff format
+              run: ruff format --check .
+
             - name: Mypy
               run: mypy sb90_devops
 
+            # The runner pool is Linux-only, so the win32 branches in proc.py
+            # can never execute here. tests/test_proc_windows.py drives them
+            # with a patched sys.platform instead — that is the only coverage
+            # those branches get, so it is not optional.
             - name: Pytest
               run: pytest -q

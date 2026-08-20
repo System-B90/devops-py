@@ -22,22 +22,21 @@ def _needs_shell(cmd: list[str]) -> bool:
     return sys.platform == "win32" and bool(cmd) and cmd[0] in _WINDOWS_SHELL_SHIMS
 
 
-def run(cmd: list[str], cwd: Path, **kwargs) -> subprocess.CompletedProcess:
-    """Runs `cmd` in `cwd`, routing Windows npm/npx shims through the shell."""
-    return subprocess.run(cmd, cwd=cwd, shell=_needs_shell(cmd), **kwargs)
+def run(cmd: list[str], cwd: Path, *, check: bool = False, **kwargs) -> subprocess.CompletedProcess:
+    """Runs `cmd` in `cwd`, routing Windows npm/npx shims through the shell.
+
+    `check` is spelled out rather than left to **kwargs so callers see the
+    default (non-raising, matching subprocess.run) at the call site."""
+    return subprocess.run(cmd, cwd=cwd, shell=_needs_shell(cmd), check=check, **kwargs)
 
 
-def spawn_background(
-    cmd: list[str], log_file: Path, pid_file: Path, cwd: Path
-) -> int:
+def spawn_background(cmd: list[str], log_file: Path, pid_file: Path, cwd: Path) -> int:
     """Starts a detached background process, logs its output, and records its PID."""
     log_file.parent.mkdir(parents=True, exist_ok=True)
     pid_file.parent.mkdir(parents=True, exist_ok=True)
     creationflags = 0
     if sys.platform == "win32":
-        creationflags = (
-            subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
-        )
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
     with log_file.open("w", encoding="utf-8") as log:
         proc = subprocess.Popen(
             cmd,
@@ -54,7 +53,10 @@ def spawn_background(
 def pid_alive(pid: int) -> bool:
     if sys.platform == "win32":
         result = subprocess.run(
-            ["tasklist", "/FI", f"PID eq {pid}"], capture_output=True, text=True
+            ["tasklist", "/FI", f"PID eq {pid}"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         return str(pid) in result.stdout
     try:
@@ -66,7 +68,7 @@ def pid_alive(pid: int) -> bool:
 
 def kill_pid(pid: int) -> None:
     if sys.platform == "win32":
-        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
+        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, check=False)
     else:
         try:
             os.kill(pid, signal.SIGTERM)
