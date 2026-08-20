@@ -1,0 +1,40 @@
+name: CI
+
+on:
+    push:
+        branches: [master]
+    pull_request:
+
+jobs:
+    test:
+        name: Lint and test (${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 15
+        strategy:
+            fail-fast: false
+            matrix:
+                # Both, deliberately: every helper here branches on
+                # sys.platform, and the Windows branches are the ones that
+                # actually break.
+                os: [ubuntu-latest, windows-latest]
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v7
+
+            - name: Setup Python
+              uses: actions/setup-python@v7
+              with:
+                  python-version: "3.11"
+
+            - name: Install
+              run: python -m pip install --upgrade pip ".[dev,lint]"
+
+            - name: Ruff
+              run: ruff check .
+
+            - name: Mypy
+              run: mypy sb90_devops
+
+            - name: Pytest
+              run: pytest -q

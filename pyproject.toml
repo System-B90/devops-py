@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sb90-devops"
+dynamic = ["version"]
+description = "Shared dev-ops helpers for System-B90 repo tooling — process lifecycle and reachability probes used by each repo's tools.py CLI."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Michael K. Steinberg", email = "m.kuper.steinberg@gmail.com" }]
+license = { text = "Proprietary" }
+keywords = ["devops", "tooling", "system-b90"]
+# No runtime dependencies on purpose: this is imported by scripts/tools_impl.py
+# in every repo, including before that repo's own dev deps are installed.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+# Pinned exactly, for the same reason pyhive pins them: an upstream release
+# that promotes a rule turns the build red on an unrelated PR. Bump in its
+# own PR.
+lint = ["ruff==0.16.3", "mypy==2.3.0"]
+
+[project.urls]
+Homepage = "https://github.com/System-B90/devops-py"
+Repository = "https://github.com/System-B90/devops-py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sb90_devops"]
+
+[tool.hatch.version]
+path = "sb90_devops/__init__.py"
