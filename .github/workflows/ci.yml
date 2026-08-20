@@ -6,6 +6,12 @@ on:
     pull_request:
 
 jobs:
+    # GitHub-hosted on purpose, against the org CLAUDE.md default: this job is
+    # ~45s and only fires on PRs to a tiny package, and the self-hosted pool is
+    # Linux-only. Every helper in proc.py branches on sys.platform and the
+    # win32 branches are the ones that actually break, so a real Windows leg is
+    # worth more here than the saved minutes. Long-running jobs still belong on
+    # self-hosted.
     test:
         name: Lint and test (${{ matrix.os }})
         runs-on: ${{ matrix.os }}
@@ -13,9 +19,6 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                # Both, deliberately: every helper here branches on
-                # sys.platform, and the Windows branches are the ones that
-                # actually break.
                 os: [ubuntu-latest, windows-latest]
 
         steps:
@@ -33,8 +36,15 @@ jobs:
             - name: Ruff
               run: ruff check .
 
+            - name: Ruff format
+              run: ruff format --check .
+
             - name: Mypy
               run: mypy sb90_devops
 
+            # test_proc_windows.py drives the win32 branches with a patched
+            # sys.platform. Redundant with the windows-latest leg by design —
+            # it keeps those branches covered if the matrix ever collapses to
+            # self-hosted Linux.
             - name: Pytest
               run: pytest -q
