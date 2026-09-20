@@ -27,7 +27,9 @@ _KEY = _FIXTURES / "localhost-test.key"
 
 
 class _QuietHandler(http.server.BaseHTTPRequestHandler):
-    def do_GET(self) -> None:  # noqa: N802 - name fixed by BaseHTTPRequestHandler
+    # do_GET's casing is fixed by BaseHTTPRequestHandler's dispatch, not a
+    # style choice. N802 is not in this repo's enabled rules, so no noqa.
+    def do_GET(self) -> None:
         self.send_response(200)
         self.send_header("Content-Length", "2")
         self.end_headers()

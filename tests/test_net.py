@@ -8,7 +8,7 @@ Author: Michael K. Steinberg
 import socket
 import ssl
 import urllib.error
-from typing import Any
+from typing import Any, Self
 
 import pytest
 
@@ -43,7 +43,7 @@ class _FakeResponse:
     def __init__(self, status: int) -> None:
         self.status = status
 
-    def __enter__(self) -> "_FakeResponse":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *_exc: object) -> None:
