@@ -37,9 +37,11 @@ def test_pid_alive_self() -> None:
 
 
 def test_pid_alive_dead() -> None:
-    # PIDs are recycled, but this one is reserved on every platform we target:
-    # 0 is the idle process on Windows and the "whole process group" sentinel
-    # on POSIX, so neither reports as a live, killable process here.
+    # Not a reserved pid -- there is no portable one. It is simply far above
+    # the pid_max of every platform we target (Linux defaults to 4194304,
+    # Windows pids stay well below it), so nothing can legitimately be using
+    # it. 0 would be the wrong choice here: os.kill(0, 0) signals the caller's
+    # whole process group and would report alive on POSIX.
     assert proc.pid_alive(999_999_999) is False
 
 

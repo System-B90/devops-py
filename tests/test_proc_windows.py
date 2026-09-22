@@ -1,14 +1,18 @@
 """
 Name: test_proc_windows.py
 Purpose: Drives the win32 branches of sb90_devops.proc with a patched
-         sys.platform. CI runs on a Linux-only self-hosted pool, so these
-         branches get no real execution anywhere else.
+         sys.platform. Redundant with the windows-latest CI leg by design:
+         these keep the branches covered if the matrix ever collapses back
+         to a Linux-only self-hosted pool. The one test here that needs a
+         real Windows kernel is skipped elsewhere.
 Created: 2026-08-21
 Author: Michael K. Steinberg
 """
 
+import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -102,3 +106,86 @@ def test_spawn_background_sets_detached_flags(
     assert seen["creationflags"] == expected
     assert seen["shell"] is True
     assert (tmp_path / "dev.pid").read_text(encoding="utf-8") == "4242"
+
+
+def test_needs_shell_matches_only_exact_lowercase_shims(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Characterization of _needs_shell's limits, so they stay deliberate.
+
+    The match is an exact, case-sensitive membership test on cmd[0]. Every
+    case below therefore falls through to shell=False. That is fine for the
+    callers this package has -- they all spell it plain `npm` -- but it is a
+    sharp edge worth being visible rather than rediscovered.
+    """
+    monkeypatch.setattr(sys, "platform", "win32")
+
+    assert proc._needs_shell([]) is False
+
+    # Windows paths are case-insensitive; this membership test is not.
+    assert proc._needs_shell(["NPM", "run", "dev"]) is False
+    assert proc._needs_shell(["Npm", "run", "dev"]) is False
+
+    # Naming the shim explicitly is the obvious workaround for a shell-routing
+    # bug, and it silently turns routing off instead.
+    assert proc._needs_shell(["npm.cmd", "run", "dev"]) is False
+
+    # An absolute path needs no shell resolution, so falling through is right
+    # here -- but it is the same code path as the cases above, not a decision.
+    assert proc._needs_shell([r"C:\Program Files\nodejs\npm.cmd", "run"]) is False
+
+    # Extra arguments never matter; only cmd[0] is inspected.
+    assert proc._needs_shell(["npm"]) is True
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="exercises real CreateProcess/cmd.exe routing")
+def test_run_launches_a_real_cmd_shim_through_the_shell(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The reason this module exists, executed rather than asserted about.
+
+    A .cmd file cannot be launched by CreateProcess directly, so this fails
+    with FileNotFoundError the moment shell routing regresses -- the failure
+    mode that would otherwise take down every consumer repo's dev-server
+    workflow while the whole suite stayed green.
+
+    Uses a stand-in shim so the runner needs no Node installation.
+    """
+    shim_dir = tmp_path / "bin"
+    shim_dir.mkdir()
+    (shim_dir / "npm.cmd").write_text("@echo off\r\necho shim-ran %*\r\n", encoding="utf-8")
+    monkeypatch.setenv("PATH", f"{shim_dir}{os.pathsep}{os.environ['PATH']}")
+
+    result = proc.run(["npm", "run", "dev"], cwd=tmp_path, capture_output=True, text=True)
+
+    assert result.returncode == 0
+    assert "shim-ran" in result.stdout
+    # Arguments survive the extra round of shell parsing.
+    assert "run dev" in result.stdout
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="exercises real CreateProcess/cmd.exe routing")
+def test_spawn_background_launches_a_real_cmd_shim_through_the_shell(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Same routing, through the detached-spawn path the dev server uses."""
+    shim_dir = tmp_path / "bin"
+    shim_dir.mkdir()
+    (shim_dir / "npm.cmd").write_text("@echo off\r\necho shim-ran %*\r\n", encoding="utf-8")
+    monkeypatch.setenv("PATH", f"{shim_dir}{os.pathsep}{os.environ['PATH']}")
+
+    log_file = tmp_path / "state" / "dev.log"
+    pid = proc.spawn_background(
+        ["npm", "run", "dev"],
+        log_file=log_file,
+        pid_file=tmp_path / "state" / "dev.pid",
+        cwd=tmp_path,
+    )
+
+    assert pid > 0
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        if "shim-ran" in log_file.read_text(encoding="utf-8"):
+            break
+        time.sleep(0.05)
+    assert "shim-ran" in log_file.read_text(encoding="utf-8")
