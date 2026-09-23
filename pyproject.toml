@@ -20,7 +20,7 @@ dev = ["pytest>=8.0.0"]
 # Pinned exactly, for the same reason pyhive pins them: an upstream release
 # that promotes a rule turns the build red on an unrelated PR. Bump in its
 # own PR.
-lint = ["ruff==0.16.3", "mypy==2.3.0"]
+lint = ["ruff==0.16.8", "mypy==2.3.0"]
 
 [project.urls]
 Homepage = "https://github.com/System-B90/devops-py"
