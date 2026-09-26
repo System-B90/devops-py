@@ -31,7 +31,7 @@ jobs:
             matrix:
                 include:
                     - os: self-hosted
-                      runner: [self-hosted, python]
+                      runner: [self-hosted, Linux, python]
                     - os: windows-latest
                       runner: windows-latest
 
