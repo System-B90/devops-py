@@ -4,6 +4,16 @@ on:
     push:
         branches: [master]
     pull_request:
+    workflow_dispatch:
+        inputs:
+            runner:
+                description: 'Runner environment to execute on'
+                required: false
+                default: 'self-hosted'
+                type: choice
+                options:
+                    - self-hosted
+                    - github-hosted
 
 jobs:
     # GitHub-hosted on purpose, against the org CLAUDE.md default: this job is
@@ -14,12 +24,16 @@ jobs:
     # self-hosted.
     test:
         name: Lint and test (${{ matrix.os }})
-        runs-on: ${{ matrix.os }}
+        runs-on: ${{ (matrix.os == 'self-hosted' && (inputs.runner == 'github-hosted' || vars.CI_RUNNER == 'github-hosted')) && 'ubuntu-latest' || matrix.runner }}
         timeout-minutes: 15
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-latest]
+                include:
+                    - os: self-hosted
+                      runner: [self-hosted, Linux, python]
+                    - os: windows-latest
+                      runner: windows-latest
 
         steps:
             - name: Checkout repository
