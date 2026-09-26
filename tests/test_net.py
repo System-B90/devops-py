@@ -97,7 +97,9 @@ def test_https_ok_thresholds_an_http_error_at_500(
     # urlopen raises HTTPError for 4xx/5xx rather than returning them, so this
     # branch carries the same threshold as the success path. A 404 counting as
     # "up" is the intended contract: the host answered, so it is reachable.
-    error = urllib.error.HTTPError(url="https://hive.test", code=code, msg="", hdrs=None, fp=None)
+    error = urllib.error.HTTPError(
+        url="https://hive.test", code=code, msg="", hdrs=None, fp=None
+    )
     _stub_urlopen(monkeypatch, error)
     assert net.https_ok("hive.test") == expected
 
