@@ -56,7 +56,9 @@ def test_run_executes_in_cwd(tmp_path: Path) -> None:
     assert Path(result.stdout.strip()).resolve() == tmp_path.resolve()
 
 
-def test_needs_shell_only_for_windows_npm_shims(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_needs_shell_only_for_windows_npm_shims(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(sys, "platform", "win32")
     assert proc._needs_shell(["npm", "run", "dev"]) is True
     assert proc._needs_shell(["npx", "playwright", "test"]) is True
@@ -100,4 +102,6 @@ def test_run_does_not_raise_by_default(tmp_path: Path) -> None:
 
 def test_run_check_true_raises(tmp_path: Path) -> None:
     with pytest.raises(subprocess.CalledProcessError):
-        proc.run([sys.executable, "-c", "raise SystemExit(3)"], cwd=tmp_path, check=True)
+        proc.run(
+            [sys.executable, "-c", "raise SystemExit(3)"], cwd=tmp_path, check=True
+        )

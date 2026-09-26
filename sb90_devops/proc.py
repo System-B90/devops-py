@@ -22,7 +22,9 @@ def _needs_shell(cmd: list[str]) -> bool:
     return sys.platform == "win32" and bool(cmd) and cmd[0] in _WINDOWS_SHELL_SHIMS
 
 
-def run(cmd: list[str], cwd: Path, *, check: bool = False, **kwargs) -> subprocess.CompletedProcess:
+def run(
+    cmd: list[str], cwd: Path, *, check: bool = False, **kwargs
+) -> subprocess.CompletedProcess:
     """Runs `cmd` in `cwd`, routing Windows npm/npx shims through the shell.
 
     `check` is spelled out rather than left to **kwargs so callers see the
@@ -36,7 +38,9 @@ def spawn_background(cmd: list[str], log_file: Path, pid_file: Path, cwd: Path) 
     pid_file.parent.mkdir(parents=True, exist_ok=True)
     creationflags = 0
     if sys.platform == "win32":
-        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+        creationflags = (
+            subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+        )
     with log_file.open("w", encoding="utf-8") as log:
         proc = subprocess.Popen(
             cmd,
@@ -68,7 +72,9 @@ def pid_alive(pid: int) -> bool:
 
 def kill_pid(pid: int) -> None:
     if sys.platform == "win32":
-        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, check=False)
+        subprocess.run(
+            ["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, check=False
+        )
     else:
         try:
             os.kill(pid, signal.SIGTERM)

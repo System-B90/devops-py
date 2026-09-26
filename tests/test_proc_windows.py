@@ -51,7 +51,9 @@ def test_pid_alive_parses_tasklist(as_windows, monkeypatch: pytest.MonkeyPatch) 
     assert calls[0] == ["tasklist", "/FI", "PID eq 4242"]
 
 
-def test_kill_pid_uses_taskkill_tree(as_windows, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_kill_pid_uses_taskkill_tree(
+    as_windows, monkeypatch: pytest.MonkeyPatch
+) -> None:
     calls: list[list[str]] = []
 
     def fake_run(cmd, **kwargs):
@@ -138,7 +140,9 @@ def test_needs_shell_matches_only_exact_lowercase_shims(
     assert proc._needs_shell(["npm"]) is True
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="exercises real CreateProcess/cmd.exe routing")
+@pytest.mark.skipif(
+    sys.platform != "win32", reason="exercises real CreateProcess/cmd.exe routing"
+)
 def test_run_launches_a_real_cmd_shim_through_the_shell(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -153,10 +157,14 @@ def test_run_launches_a_real_cmd_shim_through_the_shell(
     """
     shim_dir = tmp_path / "bin"
     shim_dir.mkdir()
-    (shim_dir / "npm.cmd").write_text("@echo off\r\necho shim-ran %*\r\n", encoding="utf-8")
+    (shim_dir / "npm.cmd").write_text(
+        "@echo off\r\necho shim-ran %*\r\n", encoding="utf-8"
+    )
     monkeypatch.setenv("PATH", f"{shim_dir}{os.pathsep}{os.environ['PATH']}")
 
-    result = proc.run(["npm", "run", "dev"], cwd=tmp_path, capture_output=True, text=True)
+    result = proc.run(
+        ["npm", "run", "dev"], cwd=tmp_path, capture_output=True, text=True
+    )
 
     assert result.returncode == 0
     assert "shim-ran" in result.stdout
@@ -164,14 +172,18 @@ def test_run_launches_a_real_cmd_shim_through_the_shell(
     assert "run dev" in result.stdout
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="exercises real CreateProcess/cmd.exe routing")
+@pytest.mark.skipif(
+    sys.platform != "win32", reason="exercises real CreateProcess/cmd.exe routing"
+)
 def test_spawn_background_launches_a_real_cmd_shim_through_the_shell(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Same routing, through the detached-spawn path the dev server uses."""
     shim_dir = tmp_path / "bin"
     shim_dir.mkdir()
-    (shim_dir / "npm.cmd").write_text("@echo off\r\necho shim-ran %*\r\n", encoding="utf-8")
+    (shim_dir / "npm.cmd").write_text(
+        "@echo off\r\necho shim-ran %*\r\n", encoding="utf-8"
+    )
     monkeypatch.setenv("PATH", f"{shim_dir}{os.pathsep}{os.environ['PATH']}")
 
     log_file = tmp_path / "state" / "dev.log"
