@@ -23,7 +23,7 @@ jobs:
     # worth more here than the saved minutes. Long-running jobs still belong on
     # self-hosted.
     test:
-        name: Lint and test (${{ matrix.os }})
+        name: Lint and Test (${{ matrix.os }})
         runs-on: ${{ (matrix.os == 'self-hosted' && (inputs.runner == 'github-hosted' || vars.CI_RUNNER == 'github-hosted')) && 'ubuntu-latest' || matrix.runner }}
         timeout-minutes: 15
         strategy:
