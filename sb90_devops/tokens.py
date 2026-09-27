@@ -77,12 +77,12 @@ def find_registry_token() -> str | None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """`python -m sb90_devops.tokens CMD...` runs CMD with NPM_TOKEN exported."""
+    """Runs CMD with NPM_TOKEN exported; see `python -m sb90_devops.with_npm_token`."""
     args = list(sys.argv[1:] if argv is None else argv)
     if args[:1] == ["--"]:
         args = args[1:]
     if not args:
-        print("usage: python -m sb90_devops.tokens CMD [ARGS...]", file=sys.stderr)
+        print("usage: python -m sb90_devops.with_npm_token CMD...", file=sys.stderr)
         return 2
     token = find_npm_token()
     if not token:
@@ -98,7 +98,3 @@ def main(argv: Sequence[str] | None = None) -> int:
     except OSError as error:
         print(f"[ERROR] Could not run {args[0]}: {error}", file=sys.stderr)
         return 127
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

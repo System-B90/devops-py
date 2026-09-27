@@ -35,7 +35,7 @@ find_npm_token()  # NPM_TOKEN, GITHUB_TOKEN, GH_TOKEN, ~/.npmrc, `gh auth token`
 find_registry_token()  # CLASSIC_ACCESS_TOKEN, HIVE_REPO_TOKEN, GITHUB_TOKEN, GH_TOKEN, `gh`
 ```
 
-`python -m sb90_devops.tokens docker compose build` runs a command with
+`python -m sb90_devops.with_npm_token docker compose build` runs a command with
 `NPM_TOKEN` exported (replaces the per-repo `with-npm-token.sh`).
 
 ### Local Hive stack (`sb90_devops.hive_stack`)
