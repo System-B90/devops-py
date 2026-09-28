@@ -26,6 +26,34 @@ from sb90_devops import (
 )
 ```
 
+### Tokens (`sb90_devops.tokens`)
+
+```python
+from sb90_devops import find_npm_token, find_registry_token
+
+find_npm_token()  # NPM_TOKEN, GITHUB_TOKEN, GH_TOKEN, ~/.npmrc, `gh auth token`
+find_registry_token()  # CLASSIC_ACCESS_TOKEN, HIVE_REPO_TOKEN, GITHUB_TOKEN, GH_TOKEN, `gh`
+```
+
+`python -m sb90_devops.with_npm_token docker compose build` runs a command with
+`NPM_TOKEN` exported (replaces the per-repo `with-npm-token.sh`).
+
+### Local Hive stack (`sb90_devops.hive_stack`)
+
+Mirrors the `setup-hive` / `shared-hive-acquire` actions for local runs:
+
+```python
+from sb90_devops import hive_stack
+
+hive_stack.check_hosts({hive_stack.HIVE_HOST: hive_stack.HIVE_HOST_IP})
+stack = hive_stack.sync_stack(STATE_DIR / "pyhive-stack")  # sparse clone of pyhive
+hive_stack.pull_images(stack)  # ghcr pull + retag
+hive_stack.init_stack(stack, wait_attempts=90)  # up, migrate, seed
+```
+
+Failures raise `hive_stack.HiveStackError`; progress goes to the `echo`
+callable (default `print`), so a typer CLI can pass `typer.echo`.
+
 `run` and `spawn_background` take `cwd` explicitly rather than reading a module
 global, so a consumer passes its own `ROOT`.
 
@@ -35,4 +63,4 @@ so both spawn helpers route *only those* through the shell. A blanket
 
 ## Consumers
 
-`Bluz`, `madash` — see issue System-B90/Bluz#226.
+`Bluz`, `madash`, `peek-a-boo` — see issue System-B90/Bluz#226.
